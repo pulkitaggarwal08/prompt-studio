@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Studio — AI prompt enhancer</title>
+<meta name="description" content="Type a rough prompt, pick a framework (or let the AI choose), and Prompt Studio rewrites it into a polished, ready-to-use prompt for any model. Free, powered by Groq." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231b5e34'/%3E%3Ctext x='50' y='72' font-family='Georgia,serif' font-size='64' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
+<meta property="og:title" content="Prompt Studio — AI prompt enhancer" />
+<meta property="og:description" content="Type a rough prompt, pick a framework or let AI choose, and get a polished prompt for any model." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --radius:0.5rem;
+    --paper:oklch(0.985 0.006 120);--ink:oklch(0.18 0.02 160);--ink-soft:oklch(0.42 0.015 160);
+    --leaf:oklch(0.62 0.16 145);--leaf-deep:oklch(0.34 0.09 150);--leaf-soft:oklch(0.94 0.04 145);
+    --background:var(--paper);--foreground:var(--ink);--card:oklch(1 0 0);
+    --primary:var(--leaf-deep);--primary-foreground:oklch(0.985 0.006 120);
+    --secondary:var(--leaf-soft);--secondary-foreground:var(--leaf-deep);
+    --muted:oklch(0.96 0.008 140);--muted-foreground:var(--ink-soft);
+    --accent:var(--leaf);--accent-deep:oklch(0.5 0.15 148);
+    --border:oklch(0.9 0.012 140);--input:oklch(0.92 0.01 140);--ring:var(--leaf);
+    --font-display:"Fraunces", ui-serif, Georgia, serif;--font-sans:"Inter", ui-sans-serif, system-ui, sans-serif;--font-mono:"JetBrains Mono", ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;border-color:var(--border);}
+  html{font-family:var(--font-sans);scroll-behavior:smooth;}
+  body{margin:0;background:var(--background);color:var(--foreground);font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;line-height:1.55;}
+  h1,h2,h3{font-family:var(--font-display);letter-spacing:-.02em;font-weight:500;margin:0;}
+  a{color:inherit;text-decoration:none;}
+  em{font-style:italic;}
+  ::selection{background:var(--secondary);}
+  .wrap{max-width:72rem;margin:0 auto;padding:0 1.5rem;}
+  .mono{font-family:var(--font-mono);}
+  .kicker{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted-foreground);margin-bottom:.75rem;}
+
+  header.site{position:sticky;top:0;z-index:40;border-bottom:1px solid color-mix(in oklab,var(--border) 70%,transparent);background:color-mix(in oklab,var(--background) 85%,transparent);backdrop-filter:blur(10px);}
+  .site-in{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;max-width:72rem;margin:0 auto;}
+  .logo{display:flex;align-items:center;gap:.75rem;}
+  .logo .mark{display:grid;place-items:center;height:2.25rem;width:2.25rem;border-radius:var(--radius);background:var(--primary);color:var(--primary-foreground);font-family:var(--font-display);font-size:1.25rem;line-height:1;}
+  .logo .name{font-family:var(--font-display);font-size:1.25rem;line-height:1.1;}
+  .logo .sub{font-size:.72rem;color:var(--muted-foreground);}
+  nav.main{display:none;gap:1.75rem;font-size:.875rem;color:var(--muted-foreground);}
+  nav.main a:hover{color:var(--foreground);}
+  @media(min-width:768px){nav.main{display:flex;}}
+
+  .top{position:relative;overflow:hidden;border-bottom:1px solid color-mix(in oklab,var(--border) 60%,transparent);}
+  .soft-glow{position:absolute;inset:0;background:radial-gradient(60rem 40rem at 85% -10%, color-mix(in oklab, var(--leaf) 16%, transparent), transparent 60%),radial-gradient(50rem 40rem at -10% 6%, color-mix(in oklab, var(--leaf-deep) 9%, transparent), transparent 60%);pointer-events:none;}
+  .top-in{position:relative;padding:2.4rem 0 3rem;}
+  .badge{display:inline-flex;align-items:center;gap:.5rem;border:1px solid color-mix(in oklab,var(--leaf) 20%,transparent);background:var(--secondary);color:var(--secondary-foreground);border-radius:100px;padding:.25rem .75rem;font-size:.75rem;margin-bottom:1.25rem;}
+  .badge .dot{height:.375rem;width:.375rem;border-radius:50%;background:var(--accent);}
+  h1.top-title{max-width:52rem;font-size:clamp(2.2rem,5.2vw,3.6rem);line-height:1.06;}
+  h1.top-title em{color:var(--accent-deep);}
+  .lede{max-width:44rem;margin-top:1rem;font-size:1.05rem;color:var(--muted-foreground);}
+
+  section{border-bottom:1px solid color-mix(in oklab,var(--border) 60%,transparent);}
+  .sec-in{padding:5rem 0;}
+  h2.sec{font-size:clamp(1.9rem,4vw,2.8rem);line-height:1.08;}
+  .sec-lead{margin-top:1rem;color:var(--muted-foreground);max-width:48rem;}
+  .bg-card{background:var(--card);}
+
+  .builder-grid{display:grid;gap:1.5rem;margin-top:2rem;}
+  @media(min-width:1024px){.builder-grid{grid-template-columns:1fr 1fr;}}
+  .card{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);padding:1.25rem;}
+  .card + .card{margin-top:1.25rem;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;gap:.5rem;}
+  .card-head label{font-size:.875rem;font-weight:600;}
+  .mini-btns{display:flex;gap:.5rem;}
+  .mini-btn{border:1px solid var(--border);background:var(--card);border-radius:calc(var(--radius) - 2px);padding:.25rem .5rem;font-size:11px;cursor:pointer;font-family:var(--font-sans);color:var(--foreground);}
+  .mini-btn:hover{background:var(--secondary);}
+  .mini-btn:disabled{opacity:.45;cursor:default;}
+  textarea,input.text{width:100%;resize:vertical;border:1px solid var(--input);border-radius:calc(var(--radius) - 1px);background:var(--background);padding:.6rem .75rem;font-size:.9rem;font-family:var(--font-sans);color:var(--foreground);outline:none;line-height:1.55;}
+  textarea::placeholder,input.text::placeholder{color:color-mix(in oklab,var(--muted-foreground) 60%,transparent);}
+  textarea:focus,input.text:focus{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 20%,transparent);}
+  .examples{margin-top:.85rem;}
+  .examples .ex-lbl{font-size:.68rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted-foreground);margin-bottom:.45rem;display:block;}
+  .ex-row{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .ex-chip{border:1px dashed var(--border);background:var(--background);border-radius:100px;padding:.28rem .7rem;font-size:11px;cursor:pointer;color:var(--foreground);font-family:var(--font-sans);transition:.14s;}
+  .ex-chip:hover{border-style:solid;border-color:var(--primary);background:var(--secondary);color:var(--secondary-foreground);}
+
+  .fw-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;}
+  @media(min-width:640px){.fw-picker{grid-template-columns:repeat(3,1fr);}}
+  .pick{position:relative;border:1px solid var(--border);background:var(--background);border-radius:calc(var(--radius) - 1px);padding:.5rem .75rem;text-align:left;cursor:pointer;font-family:var(--font-sans);transition:.14s;}
+  .pick:hover{border-color:color-mix(in oklab,var(--primary) 40%,var(--border));background:color-mix(in oklab,var(--secondary) 40%,var(--background));}
+  .pick.on{border-color:var(--primary);background:var(--secondary);color:var(--secondary-foreground);}
+  .pick .pa{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-deep);}
+  .pick .pn{font-size:12px;}
+  .pick.autopick{border-color:color-mix(in oklab,var(--primary) 45%,var(--border));}
+  .pick.autopick .pa{color:var(--primary);}
+  .fw-info{margin-top:.75rem;border:1px solid color-mix(in oklab,var(--leaf) 20%,transparent);background:color-mix(in oklab,var(--secondary) 50%,var(--background));border-radius:calc(var(--radius) - 1px);padding:.75rem;font-size:.75rem;color:var(--secondary-foreground);}
+  .fw-info .muted{color:var(--muted-foreground);}
+
+  .disc-toggle{display:flex;align-items:center;gap:.5rem;width:100%;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:.875rem;font-weight:600;color:var(--foreground);padding:0;}
+  .disc-toggle .chev{transition:transform .18s;color:var(--muted-foreground);font-family:var(--font-mono);}
+  .disc-toggle.open .chev{transform:rotate(90deg);}
+  .disc-toggle .hint{font-weight:400;color:var(--muted-foreground);font-size:.78rem;}
+  .disc-body{display:none;margin-top:1rem;}
+  .disc-body.open{display:block;}
+  .field{margin-bottom:.9rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:.78rem;font-weight:500;margin-bottom:.35rem;}
+
+  .grouplbl{font-size:.875rem;font-weight:600;margin-bottom:.75rem;}
+  .grouplbl .g-hint{font-weight:400;color:var(--muted-foreground);font-size:.72rem;margin-left:.4rem;}
+  .enh-row{margin-bottom:.75rem;}
+  .enh-row:last-child{margin-bottom:0;}
+  .enh-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.375rem;}
+  .enh-top .el{font-size:.75rem;font-weight:500;}
+  .chips{display:flex;flex-wrap:wrap;gap:.375rem;}
+  .chip{border:1px solid var(--border);background:var(--background);border-radius:100px;padding:.25rem .75rem;font-size:11px;cursor:pointer;font-family:var(--font-sans);color:var(--foreground);transition:.14s;}
+  .chip:hover{background:var(--secondary);}
+  .chip.on{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground);}
+  .chip.tech.on{background:var(--accent-deep);border-color:var(--accent-deep);}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:var(--radius);padding:.6rem 1rem;font-size:.85rem;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:var(--font-sans);transition:.15s;}
+  .btn-primary{background:var(--primary);color:var(--primary-foreground);}
+  .btn-primary:hover{opacity:.92;}
+  .btn-primary:disabled{opacity:.6;cursor:default;}
+  .enhance-btn{width:100%;font-size:1rem;padding:.95rem 1.25rem;margin:1.25rem 0;box-shadow:0 6px 18px -8px color-mix(in oklab,var(--primary) 70%,transparent);}
+  .tune-div{height:1px;background:var(--border);margin:1.1rem 0;}
+
+  .out-wrap{align-self:start;}
+  @media(min-width:1024px){.out-wrap{position:sticky;top:6rem;}}
+  .out-card{border:1px solid color-mix(in oklab,var(--primary) 30%,var(--border));background:var(--background);border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,.04);min-height:22rem;display:flex;flex-direction:column;}
+  .out-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding:.6rem .75rem;gap:.5rem;}
+  .out-head .ttl{display:flex;align-items:center;gap:.5rem;font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;}
+  .out-head .ttl .dot{height:.5rem;width:.5rem;border-radius:50%;background:var(--accent);}
+  .out-actions{display:flex;gap:.4rem;}
+  .copy{border:none;background:var(--primary);color:var(--primary-foreground);border-radius:calc(var(--radius) - 1px);padding:.4rem .8rem;font-size:.75rem;font-weight:500;cursor:pointer;font-family:var(--font-sans);}
+  .copy:hover{opacity:.9;}
+  .copy:disabled{opacity:.45;cursor:default;}
+  textarea.output{flex:1;width:100%;min-height:15rem;max-height:70vh;overflow:auto;resize:vertical;border:none;outline:none;background:transparent;box-shadow:none;margin:0;padding:1rem;font-family:var(--font-mono);font-size:12.5px;line-height:1.65;color:var(--foreground);border-radius:0;}
+  textarea.output:focus{border:none;box-shadow:none;outline:none;}
+  textarea.output.placeholder{color:var(--muted-foreground);}
+  .edit-hint{font-size:.68rem;color:var(--muted-foreground);padding:0 .9rem .5rem;}
+  .out-loading{color:var(--muted-foreground);display:inline-flex;align-items:center;gap:.5rem;}
+  .out-loading::before{content:"";width:.8rem;height:.8rem;border:2px solid color-mix(in oklab,var(--primary) 35%,transparent);border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .out-foot{border-top:1px solid var(--border);padding:.55rem .9rem;}
+  .metrics{font-family:var(--font-mono);font-size:.7rem;color:var(--muted-foreground);}
+  .metrics b{color:var(--foreground);}
+  .out-note{margin-top:.75rem;font-size:.75rem;color:var(--muted-foreground);}
+
+  .fw-list{display:flex;flex-direction:column;gap:.75rem;}
+  .fw-item{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);transition:border-color .15s;}
+  .fw-item.active{border-color:var(--primary);}
+  .fw-btn{display:flex;align-items:center;gap:1.25rem;width:100%;padding:1rem 1.25rem;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--font-sans);}
+  .fw-btn .acr{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--accent-deep);width:6rem;flex-shrink:0;}
+  .fw-btn .mid{min-width:0;flex:1;}
+  .fw-btn .fw-name{font-family:var(--font-display);font-size:1.125rem;line-height:1.2;}
+  .fw-btn .fw-one{font-size:.875rem;color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fw-btn .best{display:none;font-size:.75rem;color:var(--muted-foreground);max-width:20rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  @media(min-width:768px){.fw-btn .best{display:block;}}
+  .fw-btn .plus{font-family:var(--font-mono);font-size:1.125rem;color:var(--muted-foreground);transition:transform .18s;}
+  .fw-item.open .plus{transform:rotate(45deg);}
+  .fw-detail{display:none;border-top:1px solid var(--border);padding:1.25rem 1.25rem 1.5rem;}
+  .fw-item.open .fw-detail{display:block;}
+  .fw-detail-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem 1.5rem;margin-bottom:1.5rem;}
+  .fw-detail-head .dn{font-family:var(--font-display);font-size:1.5rem;}
+  .fw-detail-head .full{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted-foreground);}
+  .fw-detail-grid{display:grid;gap:2rem;}
+  @media(min-width:768px){.fw-detail-grid{grid-template-columns:repeat(5,1fr);}}
+  .fw-sections{display:flex;flex-direction:column;gap:1.25rem;}
+  .fw-sections .s .lbl{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted-foreground);margin-bottom:.25rem;}
+  .fw-sections .s p{margin:0;font-size:15px;line-height:1.6;}
+  .letters-card{border:1px solid var(--border);background:var(--background);border-radius:var(--radius);padding:1.25rem;}
+  .letters-card .lbl{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted-foreground);margin-bottom:1rem;}
+  .letter{display:flex;gap:.75rem;margin-bottom:.75rem;}
+  .letter:last-child{margin-bottom:0;}
+  .letter .lb{display:grid;place-items:center;height:1.75rem;width:1.75rem;flex-shrink:0;border-radius:calc(var(--radius) - 2px);background:var(--secondary);color:var(--secondary-foreground);font-family:var(--font-mono);font-size:.875rem;}
+  .letter .lname{font-size:.875rem;font-weight:500;}
+  .letter .lmean{font-size:.75rem;color:var(--muted-foreground);}
+  .fw-detail .use-btn{margin-top:1.5rem;display:flex;justify-content:flex-end;}
+
+  .grid5{display:grid;gap:2.5rem;}
+  @media(min-width:768px){.grid5{grid-template-columns:repeat(5,1fr);}}
+  .col3{grid-column:span 3;}.col2{grid-column:span 2;}
+  .prose p{margin:0 0 1.15rem;font-size:15px;line-height:1.7;}
+  .prose p:last-child{margin-bottom:0;}
+  .aside-card{border:1px solid color-mix(in oklab,var(--leaf) 20%,transparent);background:color-mix(in oklab,var(--secondary) 60%,var(--card));border-radius:var(--radius);padding:1.5rem;}
+  .aside-card .lbl{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.16em;color:var(--primary);margin-bottom:1rem;}
+  .aside-card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.75rem;font-size:.875rem;}
+  .aside-card .note{margin-top:1rem;font-size:.75rem;color:var(--muted-foreground);}
+
+  .principles-grid{display:grid;gap:1.5rem;}
+  @media(min-width:768px){.principles-grid{grid-template-columns:repeat(2,1fr);}}
+  .principle{border:1px solid var(--border);background:var(--card);border-radius:var(--radius);padding:1.5rem;}
+  .principle .n{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted-foreground);margin-bottom:.75rem;}
+  .principle .t{font-family:var(--font-display);font-size:1.5rem;line-height:1.15;margin-bottom:.5rem;}
+  .principle p{margin:0;font-size:.875rem;line-height:1.6;color:var(--muted-foreground);}
+
+  footer.site{background:var(--background);}
+  .foot-in{display:flex;flex-direction:column;gap:1rem;align-items:flex-start;justify-content:space-between;padding:2rem 0;}
+  @media(min-width:768px){.foot-in{flex-direction:row;align-items:center;}}
+  .foot-name{font-size:.875rem;color:var(--muted-foreground);}
+  .foot-credit{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted-foreground);}
+  .foot-credit b{color:var(--foreground);font-weight:500;}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-in">
+    <a href="#top" class="logo"><div class="mark">P</div><div><div class="name">Prompt Studio</div><div class="sub">AI prompt enhancer</div></div></a>
+    <nav class="main">
+      <a href="#builder">Enhancer</a>
+      <a href="#frameworks">Frameworks</a>
+      <a href="#basics">What is a prompt</a>
+      <a href="#principles">Principles</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 1 · THE ENHANCER -->
+<section class="top" id="builder">
+  <div class="soft-glow"></div>
+  <div class="wrap top-in">
+    <div class="badge"><span class="dot"></span><span class="mono">AI-powered · pick a framework or let AI choose · free</span></div>
+    <h1 class="top-title">Turn a rough idea into a <em>polished prompt</em>.</h1>
+    <p class="lede">Type your prompt and pick a framework — or let the AI choose the best one. It rewrites your request into a complete, professional prompt you copy straight into ChatGPT, Claude, Gemini or Copilot.</p>
+
+    <div class="builder-grid">
+      <div>
+        <div class="card">
+          <div class="card-head">
+            <label for="raw">Your prompt</label>
+            <div class="mini-btns"><button class="mini-btn" id="clearBtn">Clear</button></div>
+          </div>
+          <textarea id="raw" rows="5" placeholder="Type or paste your rough prompt in plain language. e.g. Write a project status update for leadership covering last week's progress, risks, and decisions needed before Friday."></textarea>
+          <div class="examples"><span class="ex-lbl">Try one</span><div class="ex-row" id="exRow"></div></div>
+        </div>
+
+        <div class="card">
+          <label style="display:block;font-size:.875rem;font-weight:600;margin-bottom:.75rem;">Framework</label>
+          <div class="fw-picker" id="fwPicker"></div>
+          <div class="fw-info" id="fwInfo"></div>
+        </div>
+
+        <button class="btn btn-primary enhance-btn" id="enhanceBtn">✨ Enhance my prompt</button>
+
+        <div class="card">
+          <button class="disc-toggle" id="tuneToggle"><span class="chev">▸</span> Fine-tune <span class="hint">— optional: role, example, tone, audience, format, techniques</span></button>
+          <div class="disc-body" id="tuneBody">
+            <div class="field"><label for="f-role">Role / persona</label><input class="text" id="f-role" type="text" placeholder="Force a specific role — e.g. a senior financial controller" /></div>
+            <div class="field"><label for="f-constraints">Constraints &amp; must-haves</label><textarea id="f-constraints" rows="2" placeholder="Extra hard rules — one per line. e.g. Under 200 words · No jargon · Cite the source."></textarea></div>
+            <div class="tune-div"></div>
+            <div class="grouplbl">Shape the output <span class="g-hint">steer tone, audience, format, length</span></div>
+            <div id="shapers"></div>
+            <div class="tune-div"></div>
+            <div class="grouplbl">Reasoning techniques <span class="g-hint">optional — added into the enhanced prompt</span></div>
+            <div class="chips" id="techChips"></div>
+            <div class="field" style="margin-top:.75rem;"><label for="f-custom">Or write your own instruction</label><textarea id="f-custom" rows="2" placeholder="Anything else the enhanced prompt should tell the AI to do. e.g. Include a risk table · Write in British English · Cite sources inline."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="out-wrap">
+        <div class="out-card">
+          <div class="out-head">
+            <div class="ttl"><span class="dot"></span> Enhanced prompt</div>
+            <div class="out-actions">
+              <button class="mini-btn" id="regenBtn" disabled>↻ Regenerate</button>
+              <button class="copy" id="copyBtn" disabled>Copy</button>
+            </div>
+          </div>
+          <textarea class="output placeholder" id="output" spellcheck="false" readonly>Your AI-enhanced prompt appears here.
+
+Type a prompt, keep the framework on ✨ Auto (or pick one), and hit “Enhance my prompt”. Once it's generated you can edit or add lines right here before copying.</textarea>
+          <div class="out-foot" id="outFoot" style="display:none;"><div class="metrics" id="metrics"></div></div>
+        </div>
+        <p class="out-note">Copy the result into any model — ChatGPT, Copilot, Claude, Gemini — to actually run your task.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · FRAMEWORKS -->
+<section id="frameworks">
+  <div class="wrap sec-in">
+    <div style="max-width:48rem;margin-bottom:2.5rem;">
+      <div class="kicker">The framework library</div>
+      <h2 class="sec">Fourteen frameworks the AI builds on.</h2>
+      <p class="sec-lead">Pick one to force a structure, or leave it on Auto and the AI chooses. Click any card for the full breakdown — what each letter means, when to use it, and the mistake people make most often.</p>
+    </div>
+    <div class="fw-list" id="fwList"></div>
+  </div>
+</section>
+
+<!-- 3 · WHAT IS A PROMPT -->
+<section id="basics" class="bg-card">
+  <div class="wrap sec-in">
+    <div style="max-width:48rem;margin-bottom:2.5rem;">
+      <div class="kicker">The fundamentals</div>
+      <h2 class="sec">What a prompt actually is.</h2>
+    </div>
+    <div class="grid5">
+      <div class="col3 prose">
+        <p>A prompt is a brief. It sets the model's <em>role</em>, describes the <em>task</em>, and constrains the <em>shape</em> of the answer. Everything else is decoration.</p>
+        <p>A one-line question gets a generic answer because a one-line brief would get a generic deliverable from a person too. The lift from a bad prompt to a great one isn't longer text — it's <strong>structure</strong>. Same information, better organised, produces a dramatically better response.</p>
+        <p>That is what a framework is: a proven structure. Prompt Studio reads your rough request, applies the framework you chose (or the one it judges best), and writes the fully-formed prompt for you — so you get the structure without doing the work.</p>
+      </div>
+      <aside class="col2">
+        <div class="aside-card">
+          <div class="lbl">The four signals every model uses</div>
+          <ul>
+            <li><strong>Role.</strong> Primes vocabulary and reasoning style.</li>
+            <li><strong>Task.</strong> The single thing to produce.</li>
+            <li><strong>Context.</strong> What the model needs to know to reason well.</li>
+            <li><strong>Format.</strong> The container the answer arrives in.</li>
+          </ul>
+          <p class="note">Every framework in the library rearranges and expands these four signals for a different purpose.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · PRINCIPLES -->
+<section id="principles" style="background:var(--background);">
+  <div class="wrap sec-in">
+    <div style="max-width:48rem;margin-bottom:2.5rem;">
+      <div class="kicker">Prompt engineering, distilled</div>
+      <h2 class="sec">Six principles behind every good prompt.</h2>
+    </div>
+    <div class="principles-grid" id="principles-grid"></div>
+  </div>
+</section>
+
+<footer class="site" style="border-top:1px solid color-mix(in oklab,var(--border) 60%,transparent);">
+  <div class="wrap foot-in">
+    <div class="foot-name">Prompt Studio · a free AI prompt enhancer</div>
+    <div class="foot-credit">Built by <b>Pulkit Aggarwal</b></div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ============================ FRAMEWORKS ============================ */
+const FRAMEWORKS = [
+  {id:"rtf",name:"Role · Task · Format",acronym:"RTF",fullForm:"Role — Task — Format",oneLiner:"The fastest way to get a usable answer.",bestFor:"Short, single-turn asks where you already know roughly what you want back.",whenToUse:"Quick daily work: a one-off summary, a short email, a code snippet, a definition. If your ask fits in a sentence and you know the shape of the answer, this is the right framework.",howToUse:"State who the model should behave as, describe the task in one clear sentence, then specify the output format.",commonMistake:"Skipping the role. \"Explain revenue recognition\" gets a Wikipedia paragraph. \"As a senior finance controller, explain revenue recognition\" gets a controller's answer.",parts:[{letter:"R",label:"Role",meaning:"Who the model should behave as — be specific about seniority and domain."},{letter:"T",label:"Task",meaning:"The single, concrete thing you want done."},{letter:"F",label:"Format",meaning:"The exact shape of the reply: bullets, table, email, code block, one paragraph."}]},
+  {id:"costar",name:"CO-STAR",acronym:"CO-STAR",fullForm:"Context · Objective · Style · Tone · Audience · Response",oneLiner:"For anything that will be read by someone other than you.",bestFor:"Written deliverables where how it reads matters as much as what it says.",whenToUse:"Executive updates, client emails, workshop invites, LinkedIn posts, internal announcements. Any moment where a generic answer will feel off because it doesn't match the reader.",howToUse:"Set the situation, then separate what you want achieved (Objective) from how it should sound (Style, Tone) and who is reading it (Audience). Response defines the container.",commonMistake:"Collapsing Objective and Response. The Objective is the business goal (\"get sign-off\"); the Response is the artifact that carries it (\"a 150-word email\").",parts:[{letter:"C",label:"Context",meaning:"The situation the reader is already in."},{letter:"O",label:"Objective",meaning:"What you want the reader to think, feel, or do after reading."},{letter:"S",label:"Style",meaning:"The writing register — punchy, analytical, narrative, technical."},{letter:"T",label:"Tone",meaning:"The emotional temperature — warm, neutral, urgent, celebratory."},{letter:"A",label:"Audience",meaning:"Who reads it, and what they already know."},{letter:"R",label:"Response",meaning:"The final artifact — email, memo, tweet, one-pager."}]},
+  {id:"risen",name:"RISEN",acronym:"RISEN",fullForm:"Role · Instructions · Steps · End goal · Narrowing",oneLiner:"The framework for anything that has to be done in order.",bestFor:"Multi-step deliverables where sequence and scope both matter.",whenToUse:"Standard operating procedures, test scripts, cutover checklists, training material, onboarding docs, any output where step-order is meaningful.",howToUse:"Set the role, list high-level instructions, then break the work into ordered steps. State the end goal and use Narrowing to exclude everything out of scope.",commonMistake:"Leaving Narrowing empty. Without it, the model pads the answer with adjacent topics you didn't ask for.",parts:[{letter:"R",label:"Role",meaning:"The expertise the model brings to the task."},{letter:"I",label:"Instructions",meaning:"The high-level directives that apply to every step."},{letter:"S",label:"Steps",meaning:"The ordered procedure to follow."},{letter:"E",label:"End goal",meaning:"What a finished, correct output looks like."},{letter:"N",label:"Narrowing",meaning:"Explicit exclusions and boundaries."}]},
+  {id:"crispe",name:"CRISPE",acronym:"CRISPE",fullForm:"Capacity · Role · Insight · Statement · Personality · Experiment",oneLiner:"When you want options instead of one answer.",bestFor:"Exploration, brainstorming, weighing alternatives.",whenToUse:"Solution options, positioning statements, naming, headline variants, architectural trade-offs. Any moment where three good answers beat one confident one.",howToUse:"Frame the model's capacity and role, give it the specific insight to hold, state the problem, set a personality, then use Experiment to ask for multiple variants.",commonMistake:"Forgetting to ask for variants in the Experiment field. Without it CRISPE collapses back into a single answer.",parts:[{letter:"C",label:"Capacity",meaning:"The type of thinking or expertise the model should apply."},{letter:"R",label:"Role",meaning:"The persona doing that thinking."},{letter:"I",label:"Insight",meaning:"The specific angle or lens to hold."},{letter:"S",label:"Statement",meaning:"A crisp statement of the problem."},{letter:"P",label:"Personality",meaning:"The voice — dry, playful, pragmatic, formal."},{letter:"E",label:"Experiment",meaning:"Ask for variants, rankings, or comparisons."}]},
+  {id:"cidi",name:"CIDI",acronym:"CIDI",fullForm:"Context · Instruction · Detail · Input",oneLiner:"For working on top of raw material you paste in.",bestFor:"Transforming an existing artifact — notes, logs, transcripts, tables.",whenToUse:"Cleaning up meeting notes, summarising long documents, restructuring interview transcripts, extracting a schema from a data dump.",howToUse:"Set context, give a single clear instruction, describe how much detail you want, then paste the input last so the model treats it as data.",commonMistake:"Mixing instructions and input in the same block, so the model treats commands inside the input as things to do.",parts:[{letter:"C",label:"Context",meaning:"What the input is and where it came from."},{letter:"I",label:"Instruction",meaning:"The one thing to do with it."},{letter:"D",label:"Detail",meaning:"How deep, how long, how granular."},{letter:"I",label:"Input",meaning:"The raw material — always last, always fenced off."}]},
+  {id:"tag",name:"TAG",acronym:"TAG",fullForm:"Task · Action · Goal",oneLiner:"The minimalist framework.",bestFor:"One-line asks where any ceremony would slow you down.",whenToUse:"Terminal-style prompting, quick iterations, when you already know the model well and want to skip preamble.",howToUse:"State the task, name the concrete action to take on it, and describe what success looks like. Three short lines.",commonMistake:"Using TAG for anything with a specific audience or format requirement — it has no slot for either.",parts:[{letter:"T",label:"Task",meaning:"What needs to happen."},{letter:"A",label:"Action",meaning:"The verb — draft, review, compare, refactor."},{letter:"G",label:"Goal",meaning:"The measurable outcome that means it's done."}]},
+  {id:"race",name:"RACE",acronym:"RACE",fullForm:"Role · Action · Context · Expectation",oneLiner:"Role-first prompting for deep-domain questions.",bestFor:"Questions where the domain expertise itself is the point.",whenToUse:"Deep-dive technical questions, specialist reviews, when you need vocabulary and mental models from a specific discipline.",howToUse:"Lead with a very specific role, then the action, then enough context that the role makes sense. Expectation sets the quality bar.",commonMistake:"Using a shallow role (\"expert\"). The whole framework hinges on the specificity of the Role.",parts:[{letter:"R",label:"Role",meaning:"A very specific persona with clear seniority and domain."},{letter:"A",label:"Action",meaning:"What that persona should do."},{letter:"C",label:"Context",meaning:"The situation being reasoned about."},{letter:"E",label:"Expectation",meaning:"What a great answer looks like."}]},
+  {id:"ape",name:"APE",acronym:"APE",fullForm:"Action · Purpose · Expectation",oneLiner:"Compact and purposeful.",bestFor:"Situations where the same task changes shape depending on why it's being done.",whenToUse:"Same content, different reader — the internal version vs the client version. Purpose is the reshaping lever.",howToUse:"State the action, then the purpose that reshapes it, then the expectation that anchors quality.",commonMistake:"Writing a generic Purpose. \"For internal use\" is not a purpose. \"To onboard a joiner in week one\" is.",parts:[{letter:"A",label:"Action",meaning:"The task to perform."},{letter:"P",label:"Purpose",meaning:"Why it's being done — the reshaping lens."},{letter:"E",label:"Expectation",meaning:"The quality bar."}]},
+  {id:"pecra",name:"PECRA",acronym:"PECRA",fullForm:"Purpose · Expectation · Context · Request · Action",oneLiner:"Full-context framework for longer deliverables.",bestFor:"Longer artifacts where several constraints must be held at once.",whenToUse:"Business blueprints, functional specs, solution design notes, policy documents — anywhere generic answers fail because too many things must be true at once.",howToUse:"Front-load Purpose and Expectation so the model self-filters. Then supply Context, the specific Request, and the Action that produces it.",commonMistake:"Treating Request and Action as the same thing. Request is what you want; Action is how to produce it.",parts:[{letter:"P",label:"Purpose",meaning:"Why this output exists."},{letter:"E",label:"Expectation",meaning:"The quality gates before writing begins."},{letter:"C",label:"Context",meaning:"The situation and constraints."},{letter:"R",label:"Request",meaning:"The specific artifact."},{letter:"A",label:"Action",meaning:"The process used to produce it."}]},
+  {id:"scqa",name:"SCQA",acronym:"SCQA",fullForm:"Situation · Complication · Question · Answer",oneLiner:"The classic consulting-narrative framework.",bestFor:"Framing a problem for a decision-maker before proposing a solution.",whenToUse:"Escalation notes, steering-committee slides, project pivots, board updates — anything a senior stakeholder skims and decides on.",howToUse:"Describe the Situation neutrally, introduce the Complication that forces a decision, pose the Question, then produce the Answer.",commonMistake:"Front-loading the Answer. The power of SCQA is that the reader arrives at the question before the answer.",parts:[{letter:"S",label:"Situation",meaning:"The current state, described neutrally."},{letter:"C",label:"Complication",meaning:"What has changed or is at risk."},{letter:"Q",label:"Question",meaning:"The decision the reader now faces."},{letter:"A",label:"Answer",meaning:"The recommended response."}]},
+  {id:"star",name:"STAR",acronym:"STAR",fullForm:"Situation · Task · Action · Result",oneLiner:"For narrating what you did.",bestFor:"Case studies, retros, promotion write-ups, interview stories.",whenToUse:"When you need to describe past work in a way that lands. STAR forces you to end with a measurable Result.",howToUse:"Set the Situation, describe the Task you owned, walk through the Action you took, and close with the Result — ideally with a number.",commonMistake:"Blurring Task and Action. Task is what you were accountable for; Action is what you actually did.",parts:[{letter:"S",label:"Situation",meaning:"The starting conditions."},{letter:"T",label:"Task",meaning:"What you owned."},{letter:"A",label:"Action",meaning:"What you did."},{letter:"R",label:"Result",meaning:"The measurable outcome."}]},
+  {id:"bab",name:"Before · After · Bridge",acronym:"BAB",fullForm:"Before · After · Bridge",oneLiner:"For selling a change.",bestFor:"Business cases, pitch decks, change-management communications, internal comms.",whenToUse:"Whenever the reader needs to move from \"why change\" to \"how change\". BAB tells the story of transformation, which is inherently persuasive.",howToUse:"Describe the painful Before state honestly, paint the improved After state concretely, then use the Bridge to explain how to get there.",commonMistake:"Overselling the After. A plausible After beats a utopian one every time.",parts:[{letter:"B",label:"Before",meaning:"The world today, with its friction."},{letter:"A",label:"After",meaning:"The world you're arguing for."},{letter:"B",label:"Bridge",meaning:"The concrete steps that connect them."}]},
+  {id:"tref",name:"TREF",acronym:"TREF",fullForm:"Task · Requirements · Examples · Format",oneLiner:"For output where the shape is non-negotiable.",bestFor:"Structured extraction, table generation, machine-readable output.",whenToUse:"When you need JSON, CSV, a specific table, a schema, or any output that will be parsed downstream. Also for reports that must match a house style.",howToUse:"State the task, list every requirement the output must satisfy, give at least one worked example, and specify the exact format.",commonMistake:"Skipping the Example. One good example anchors the shape better than a page of Requirements.",parts:[{letter:"T",label:"Task",meaning:"What to produce."},{letter:"R",label:"Requirements",meaning:"The non-negotiable rules."},{letter:"E",label:"Examples",meaning:"One or two worked examples of the shape you want."},{letter:"F",label:"Format",meaning:"The exact container — JSON keys, table columns, section headings."}]},
+  {id:"era",name:"ERA",acronym:"ERA",fullForm:"Expectation · Role · Action",oneLiner:"Expectation-first prompting.",bestFor:"Situations where you've been burned by generic answers and want to raise the bar upfront.",whenToUse:"Code reviews, design critiques, quality audits, editorial passes — anywhere the model tends to be too polite by default.",howToUse:"Lead with a sharp Expectation (\"be direct, name specific issues, don't hedge\"), then set the Role and the Action.",commonMistake:"Writing a soft Expectation. \"Be helpful\" adds nothing. \"Cite the line, propose a fix, don't compliment the author\" reshapes the whole reply.",parts:[{letter:"E",label:"Expectation",meaning:"The quality bar and behavior filter, stated first."},{letter:"R",label:"Role",meaning:"Who the model behaves as."},{letter:"A",label:"Action",meaning:"What that role should do."}]},
+];
+
+/* ============================ SHAPERS + TECHNIQUES ============================ */
+const SHAPERS={
+  tone:{label:"Tone",options:[{value:"auto",label:"Auto",snippet:""},{value:"executive",label:"Executive",snippet:"confident, direct, boardroom-ready, no hedging"},{value:"analytical",label:"Analytical",snippet:"neutral, evidence-led, cautious about claims"},{value:"instructional",label:"Instructional",snippet:"patient and step-by-step, assumes the reader is learning"},{value:"persuasive",label:"Persuasive",snippet:"advocates a clear position with supporting reasoning"},{value:"conversational",label:"Conversational",snippet:"plain, natural, no corporate register"}]},
+  audience:{label:"Audience",options:[{value:"auto",label:"Auto",snippet:""},{value:"executive",label:"Executive",snippet:"a senior decision-maker with limited time and mixed technical depth"},{value:"peer",label:"Peer",snippet:"a domain peer who shares your vocabulary and can handle nuance"},{value:"junior",label:"Junior",snippet:"someone new to the topic — define jargon on first use"},{value:"client",label:"Client",snippet:"an external stakeholder — avoid internal shorthand"},{value:"general",label:"General",snippet:"a general professional reader with no assumed background"}]},
+  format:{label:"Format",options:[{value:"auto",label:"Auto",snippet:""},{value:"prose",label:"Prose",snippet:"flowing paragraphs, no bullet points unless truly needed"},{value:"bullets",label:"Bullets",snippet:"a tight bullet list, one idea per bullet"},{value:"steps",label:"Steps",snippet:"a numbered, sequential list of steps"},{value:"markdown",label:"Markdown",snippet:"a structured Markdown document with headings and lists"},{value:"table",label:"Table",snippet:"a Markdown table, columns declared first"},{value:"email",label:"Email",snippet:"a ready-to-send email with a subject line and sign-off"},{value:"json",label:"JSON",snippet:"valid JSON only, no prose outside the object"}]},
+  scope:{label:"Length & depth",options:[{value:"auto",label:"Auto",snippet:""},{value:"brief",label:"Brief",snippet:"keep it brief — roughly 150 words, summary level"},{value:"standard",label:"Standard",snippet:"balanced — roughly 400 words, enough detail to act on"},{value:"deep",label:"Deep dive",snippet:"go deep — 900–1200 words, cover trade-offs and edge cases"}]},
+};
+const SHAPER_KEYS=["tone","audience","format","scope"];
+const TECHNIQUES={
+  reason:{label:"Step-by-step reasoning",line:"Instruct the model to reason step by step before writing the final answer."},
+  clarify:{label:"Ask clarifying questions first",line:"Instruct the model to ask clarifying questions first if anything essential is missing, instead of guessing."},
+  grounded:{label:"Stick to given facts",line:"Instruct the model to use only provided facts and to say when something isn't known, rather than inventing."},
+  selfcheck:{label:"Self-review before finishing",line:"Instruct the model to review its draft against every requirement and fix gaps before finishing."},
+};
+const TECH_KEYS=["reason","clarify","grounded","selfcheck"];
+
+/* ============================ STATE ============================ */
+const $=id=>document.getElementById(id);
+const state={fwId:"auto",raw:"",role:"",custom:"",constraints:"",shape:{tone:"auto",audience:"auto",format:"auto",scope:"auto"},tech:new Set(),result:"",chosen:null,loading:false};
+const getFw=()=>FRAMEWORKS.find(f=>f.id===state.fwId)||null;
+function snip(k){const v=state.shape[k];if(!v||v==="auto")return"";const o=SHAPERS[k].options.find(o=>o.value===v);return o?o.snippet:"";}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ============================ FRAMEWORK LIBRARY ============================ */
+const fwList=$("fwList");
+FRAMEWORKS.forEach(f=>{
+  const item=document.createElement("div");item.className="fw-item";item.dataset.id=f.id;
+  const letters=f.parts.map(p=>'<div class="letter"><div class="lb">'+p.letter+'</div><div><div class="lname">'+esc(p.label)+'</div><div class="lmean">'+esc(p.meaning)+"</div></div></div>").join("");
+  item.innerHTML='<button class="fw-btn" data-toggle="'+f.id+'"><div class="acr">'+f.acronym+'</div><div class="mid"><div class="fw-name">'+esc(f.name)+'</div><div class="fw-one">'+esc(f.oneLiner)+'</div></div><div class="best">'+esc(f.bestFor)+'</div><div class="plus">+</div></button><div class="fw-detail"><div class="fw-detail-head"><div class="dn">'+esc(f.name)+'</div><div class="full">'+esc(f.fullForm)+'</div></div><div class="fw-detail-grid"><div class="col3 fw-sections"><div class="s"><div class="lbl">When to use it</div><p>'+esc(f.whenToUse)+'</p></div><div class="s"><div class="lbl">How to use it</div><p>'+esc(f.howToUse)+'</p></div><div class="s"><div class="lbl">Best for</div><p>'+esc(f.bestFor)+'</p></div><div class="s"><div class="lbl">Most common mistake</div><p>'+esc(f.commonMistake)+'</p></div></div><div class="col2"><div class="letters-card"><div class="lbl">The letters</div>'+letters+'</div></div></div><div class="use-btn"><button class="btn btn-primary" data-use="'+f.id+'">Use '+f.acronym+' in the enhancer →</button></div></div>';
+  fwList.appendChild(item);
+});
+fwList.addEventListener("click",e=>{
+  const use=e.target.closest("[data-use]"),toggle=e.target.closest("[data-toggle]");
+  if(use){state.fwId=use.dataset.use;syncPicker();$("builder").scrollIntoView({behavior:"smooth",block:"start"});return;}
+  if(toggle){const item=toggle.closest(".fw-item");const willOpen=!item.classList.contains("open");[...fwList.children].forEach(c=>c.classList.remove("open"));if(willOpen)item.classList.add("open");}
+});
+
+/* ============================ PICKER (Auto + 14) ============================ */
+const fwPicker=$("fwPicker");
+const autoBtn=document.createElement("button");
+autoBtn.className="pick autopick"+(state.fwId==="auto"?" on":"");autoBtn.dataset.pick="auto";autoBtn.title="Let the AI choose the best framework for your prompt";
+autoBtn.innerHTML='<div class="pa">✨ Auto</div><div class="pn">AI picks best</div>';
+autoBtn.addEventListener("click",()=>{state.fwId="auto";syncPicker();});
+fwPicker.appendChild(autoBtn);
+FRAMEWORKS.forEach(f=>{
+  const b=document.createElement("button");b.className="pick"+(f.id===state.fwId?" on":"");b.dataset.pick=f.id;b.title=f.oneLiner;
+  b.innerHTML='<div class="pa">'+f.acronym+'</div><div class="pn">'+esc(f.name.split(" · ")[0])+"</div>";
+  b.addEventListener("click",()=>{state.fwId=f.id;syncPicker();});
+  fwPicker.appendChild(b);
+});
+function syncPicker(){
+  [...fwPicker.children].forEach(c=>c.classList.toggle("on",c.dataset.pick===state.fwId));
+  [...fwList.children].forEach(c=>c.classList.toggle("active",c.dataset.id===state.fwId));
+  if(state.fwId==="auto"){$("fwInfo").innerHTML="<strong>✨ Auto</strong> — the AI reads your prompt and picks the single best framework, then writes it. <span class='muted'>It tells you which one it chose.</span>";}
+  else{const f=getFw();$("fwInfo").innerHTML="<strong>"+f.acronym+"</strong> — "+esc(f.oneLiner)+' <span class="muted">('+esc(f.fullForm)+")</span>";}
+}
+
+/* ============================ SHAPERS + TECHNIQUES ============================ */
+const shapersWrap=$("shapers");
+SHAPER_KEYS.forEach(k=>{
+  const meta=SHAPERS[k];const row=document.createElement("div");row.className="enh-row";
+  const chips=meta.options.map(o=>'<button class="chip'+(o.value==="auto"?" on":"")+'" data-shape="'+k+'" data-val="'+o.value+'">'+esc(o.label)+"</button>").join("");
+  row.innerHTML='<div class="enh-top"><div class="el">'+meta.label+'</div></div><div class="chips">'+chips+"</div>";
+  shapersWrap.appendChild(row);
+});
+shapersWrap.addEventListener("click",e=>{const c=e.target.closest("[data-shape]");if(!c)return;const k=c.dataset.shape,v=c.dataset.val;state.shape[k]=v;[...shapersWrap.querySelectorAll('[data-shape="'+k+'"]')].forEach(x=>x.classList.toggle("on",x.dataset.val===v));});
+const techWrap=$("techChips");
+TECH_KEYS.forEach(k=>{const b=document.createElement("button");b.className="chip tech";b.dataset.tech=k;b.textContent=TECHNIQUES[k].label;b.addEventListener("click",()=>{const on=state.tech.has(k);on?state.tech.delete(k):state.tech.add(k);b.classList.toggle("on",!on);});techWrap.appendChild(b);});
+
+/* ============================ DETAIL + EXAMPLES ============================ */
+$("tuneToggle").addEventListener("click",()=>{$("tuneToggle").classList.toggle("open");$("tuneBody").classList.toggle("open");});
+$("f-role").addEventListener("input",e=>{state.role=e.target.value;});
+$("f-custom").addEventListener("input",e=>{state.custom=e.target.value;});
+$("f-constraints").addEventListener("input",e=>{state.constraints=e.target.value;});
+$("raw").addEventListener("input",e=>{state.raw=e.target.value;});
+$("clearBtn").addEventListener("click",()=>{state.raw="";$("raw").value="";$("raw").focus();});
+
+const EXAMPLES=[
+  {l:"Status update",t:"Write a project status update for leadership covering last week's progress, current risks, and what we need decisions on before Friday."},
+  {l:"Cold email",t:"Draft a persuasive cold email to a VP of Operations introducing our real-time energy-monitoring platform, under 150 words with one clear call to action."},
+  {l:"Summarise notes",t:"Summarise these meeting notes into decisions made, owners, and next steps."},
+  {l:"Debug code",t:"Debug this Python function, explain the root cause, and return a fix under 30 lines with no external libraries."},
+  {l:"Extract to table",t:"Extract the vendors, amounts and due dates from these invoices into a table."},
+  {l:"Draft a policy",t:"Write a remote-work policy for a 120-person software company in plain English, with a short summary at the top."},
+  {l:"Brainstorm names",t:"Brainstorm 5 names for a new internal AI productivity tool, each with a one-line rationale."},
+  {l:"Decision brief",t:"Create a decision brief for leadership on whether to migrate our infrastructure to Azure before Q4."},
+  {l:"LinkedIn post",t:"Turn these bullet points into a confident, non-salesy LinkedIn post about our Q3 results."},
+  {l:"Onboarding steps",t:"Write step-by-step onboarding instructions for a new data analyst joining the team."},
+  {l:"Code review",t:"Review this SQL query for performance and correctness issues and suggest specific fixes."},
+  {l:"Business case",t:"Draft a business case to convince leadership to adopt this prompt tool across all teams."},
+];
+const exRow=$("exRow");
+EXAMPLES.forEach(ex=>{const b=document.createElement("button");b.className="ex-chip";b.textContent=ex.l;b.title=ex.t;b.addEventListener("click",()=>{state.raw=ex.t;$("raw").value=ex.t;$("raw").focus();});exRow.appendChild(b);});
+
+/* ============================ ENHANCE ============================ */
+function payload(){
+  const p={raw:state.raw,tone:snip("tone"),audience:snip("audience"),format:snip("format"),scope:snip("scope"),
+    techniques:[...state.tech].map(k=>TECHNIQUES[k].line).concat(state.custom.trim()?[state.custom.trim()]:[]),
+    constraints:state.constraints.trim()?state.constraints.split(/\n+/).map(x=>x.trim()).filter(Boolean):[],
+    role:state.role.trim()};
+  if(state.fwId==="auto"){p.auto=true;p.frameworksList=FRAMEWORKS.map(f=>({name:f.name,oneLiner:f.oneLiner,whenToUse:f.whenToUse}));}
+  else{const f=getFw();p.framework={name:f.name,full:f.fullForm,oneLiner:f.oneLiner,whenToUse:f.whenToUse,howToUse:f.howToUse,parts:f.parts.map(x=>x.label+": "+x.meaning)};}
+  return p;
+}
+function setOutput(text,cls){const o=$("output");if(cls==="placeholder"){o.readOnly=true;o.classList.add("placeholder");}else{o.readOnly=false;o.classList.remove("placeholder");}o.value=text;}
+function setLoadingUI(on){
+  state.loading=on;
+  $("enhanceBtn").disabled=on;$("enhanceBtn").textContent=on?"Enhancing…":"✨ Enhance my prompt";
+  $("regenBtn").disabled=on||!state.result;$("copyBtn").disabled=on||!state.result;
+}
+function enhance(){
+  if(state.loading)return;
+  if(!state.raw.trim()){setOutput("Type a prompt first, then hit Enhance.","placeholder");$("raw").focus();return;}
+  setLoadingUI(true);
+  setOutput("✨ "+(state.fwId==="auto"?"Choosing the best framework and elevating your prompt":"Elevating your prompt with the "+getFw().acronym+" framework")+"…","placeholder");
+  $("outFoot").style.display="";$("metrics").textContent="working…";
+  fetch("/api/enhance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload())})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d&&d.text){
+        state.result=d.text;state.chosen=d.chosen||null;
+        setOutput(d.text);
+        const fwLabel=state.fwId==="auto"?("Framework: "+(d.chosen||"chosen by AI")+" (AI-picked)"):("Framework: "+getFw().acronym);
+        $("outFoot").style.display="";$("metrics").innerHTML="✨ "+esc(d.model||"AI")+(d.usage&&d.usage.total_tokens?(" · "+d.usage.total_tokens+" tokens"):"")+" · "+esc(fwLabel);
+      }else{
+        state.result="";setOutput((d&&d.error)||"AI unavailable right now — hit Regenerate.","placeholder");$("metrics").textContent="";
+      }
+    })
+    .catch(()=>{state.result="";setOutput("Couldn't reach the AI. Check your connection and hit Regenerate.","placeholder");$("metrics").textContent="";$("outFoot").style.display="none";})
+    .finally(()=>setLoadingUI(false));
+}
+$("enhanceBtn").addEventListener("click",enhance);
+$("regenBtn").addEventListener("click",enhance);
+$("copyBtn").addEventListener("click",async()=>{
+  if(!state.result)return;
+  const txt=$("output").value;
+  try{await navigator.clipboard.writeText(txt);}
+  catch(e){const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();}
+  const b=$("copyBtn");b.textContent="Copied ✓";setTimeout(()=>b.textContent="Copy",1500);
+});
+
+/* ============================ PRINCIPLES ============================ */
+const PRINCIPLES=[
+  {n:"01",t:"Structure beats length.",d:"Making a prompt longer rarely improves the answer. Reorganising the same information into a framework almost always does. The model is a pattern-matcher — give it a pattern it recognises."},
+  {n:"02",t:"Be specific about the role.",d:"“Expert” is not a role. “A senior product manager with fifteen years in enterprise SaaS” is. Specificity in the role primes the vocabulary, mental models, and defaults the model reaches for."},
+  {n:"03",t:"Name the reader.",d:"Every piece of writing is easier when you know who it is for. Tell the model who will read the output and it reshapes tone, examples, and depth without being asked."},
+  {n:"04",t:"Constrain the shape.",d:"Saying “a Markdown table with these columns” or “three short paragraphs” removes almost all formatting drift. The container is easier to get right than the content."},
+  {n:"05",t:"State what you don't want.",d:"An explicit exclusion (“no implementation details”, “skip the executive summary”) is faster and more reliable than editing the output afterwards."},
+  {n:"06",t:"Iterate one lever at a time.",d:"If the answer misses, change one input, re-run, and compare. Changing everything at once teaches you nothing about which change did the work."},
+];
+$("principles-grid").innerHTML=PRINCIPLES.map(p=>'<div class="principle"><div class="n">'+p.n+'</div><div class="t">'+esc(p.t)+'</div><p>'+esc(p.d)+"</p></div>").join("");
+
+/* init */
+syncPicker();
+</script>
+</body>
+</html>

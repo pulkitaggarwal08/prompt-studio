@@ -1,0 +1,4 @@
+.vercel
+*.pptx
+.DS_Store
+.env*
